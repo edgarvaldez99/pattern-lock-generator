@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://edgarvaldez99.github.io/pattern-lock-generator/sitemap.xml
