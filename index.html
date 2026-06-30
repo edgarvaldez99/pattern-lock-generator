@@ -146,8 +146,8 @@
   .manual-bar.show{display:flex}
   .manual-bar .manual-hint{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
   .manual-bar .manual-row{display:flex;gap:10px}
-  body.manual svg.board{cursor:pointer}
-  body.manual .node{cursor:pointer}
+  body.manual svg.board{cursor:crosshair;touch-action:none}
+  body.manual .node{cursor:crosshair}
   body.manual .controls{display:none}
   .node-hit{fill:transparent;pointer-events:all;touch-action:none}
   body.manual .node-hit{cursor:pointer}
@@ -400,7 +400,7 @@ const I18N={
     byTypeInfo:(d,r)=>"Diagonals: "+d+" · Straight: "+r,
     tByTypeNone:"No undone patterns with that combination",
     manualEnter:"✏️ Enter pattern manually",
-    manualHint:"Tap the dots in order to draw your pattern (min 2).",
+    manualHint:"Drag across the dots — finger or mouse — to draw your pattern (min 2).",
     manualSave:"Save pattern",
     manualCancel:"Cancel",
     manualClear:"Clear",
@@ -472,7 +472,7 @@ const I18N={
     byTypeInfo:(d,r)=>"Diagonales: "+d+" · Rectas: "+r,
     tByTypeNone:"No hay patrones sin hacer con esa combinación",
     manualEnter:"✏️ Ingresar patrón manualmente",
-    manualHint:"Toca los puntos en orden para dibujar tu patrón (mín. 2).",
+    manualHint:"Desliza el dedo (o arrastra el mouse) sobre los puntos para dibujar tu patrón (mín. 2).",
     manualSave:"Guardar patrón",
     manualCancel:"Cancelar",
     manualClear:"Limpiar",
@@ -544,7 +544,7 @@ const I18N={
     byTypeInfo:(d,r)=>"Diagonais: "+d+" · Retas: "+r,
     tByTypeNone:"Não há padrões não feitos com essa combinação",
     manualEnter:"✏️ Inserir padrão manualmente",
-    manualHint:"Toque nos pontos em ordem para desenhar seu padrão (mín. 2).",
+    manualHint:"Arraste o dedo (ou o mouse) sobre os pontos para desenhar seu padrão (mín. 2).",
     manualSave:"Salvar padrão",
     manualCancel:"Cancelar",
     manualClear:"Limpar",
@@ -670,7 +670,6 @@ const nodeEls=positions.map((p,i)=>{
   num.setAttribute("class","node-num");num.setAttribute("x",p.x);num.setAttribute("y",p.y);
   const hit=document.createElementNS(NS,"circle");
   hit.setAttribute("class","node-hit");hit.setAttribute("cx",p.x);hit.setAttribute("cy",p.y);hit.setAttribute("r",28);
-  hit.addEventListener("pointerdown",()=>{if(manualMode)manualHit(i);});
   g.append(ring,dot,num,hit);nodesG.append(g);
   return {g,num};
 });
@@ -738,7 +737,7 @@ let iterator=null;
 let pending=null;
 let animTimer=null;
 let lastReviewLabel=null; // función que devuelve la etiqueta "saved a/b" en el idioma actual
-let manualMode=false, manualSeq=[];
+let manualMode=false, manualSeq=[], manualDrawing=false;
 let genMode="seq", typePos=0;
 
 function clearBoard(){
@@ -945,7 +944,7 @@ function resetReviewCursor(){reviewList=null;reviewPos=-1;lastReviewLabel=null;}
 /* ============ ingreso manual (dibujar tocando los puntos) ============ */
 function enterManual(){
   exitManual();
-  manualMode=true;manualSeq=[];
+  manualMode=true;manualSeq=[];manualDrawing=false;
   document.body.classList.add("manual");
   manualBar.classList.add("show");
   pending=null;current=[];favSaveBtn.disabled=true;saveBtn.disabled=true;
@@ -954,34 +953,85 @@ function enterManual(){
 }
 function exitManual(){
   if(!manualMode)return;
-  manualMode=false;manualSeq=[];
+  manualMode=false;manualSeq=[];manualDrawing=false;
   document.body.classList.remove("manual");
   manualBar.classList.remove("show");
 }
 function manualHit(i){
-  if(manualSeq.includes(i))return;
+  if(manualSeq.includes(i))return false;
   const last=manualSeq[manualSeq.length-1];
   if(last!=null){
     const mid=MIDDLE[last+"-"+i];
     if(mid!=null&&!manualSeq.includes(mid))manualSeq.push(mid);
   }
   manualSeq.push(i);
-  renderManual();
+  return true;
 }
-function renderManual(){
+function renderManual(cursor){
   clearBoard();renderOrder(manualSeq);
   manualSeq.forEach((idx,k)=>{
     const o=nodeEls[idx];o.g.classList.add("on");o.num.textContent=k+1;
   });
   if(manualSeq.length){
     nodeEls[manualSeq[0]].g.classList.add("is-start");
-    nodeEls[manualSeq[manualSeq.length-1]].g.classList.add("is-end");
-    trail.setAttribute("d",pathUpTo(manualSeq,manualSeq.length));
+    if(!manualDrawing)nodeEls[manualSeq[manualSeq.length-1]].g.classList.add("is-end");
   }
+  let d=pathUpTo(manualSeq,manualSeq.length);
+  if(manualDrawing&&cursor&&manualSeq.length){
+    const last=positions[manualSeq[manualSeq.length-1]];
+    d=(d||("M"+last.x+" "+last.y))+" L"+cursor.x+" "+cursor.y;
+  }
+  trail.setAttribute("d",d);
   lenEl.textContent=manualSeq.length||"—";
 }
+
+/* gesto de arrastre estilo Android (dedo en móvil, mouse en web) */
+function manualSvgPoint(evt){
+  const pt=board.createSVGPoint();
+  pt.x=evt.clientX;pt.y=evt.clientY;
+  const ctm=board.getScreenCTM();
+  if(!ctm)return null;
+  const p=pt.matrixTransform(ctm.inverse());
+  return {x:p.x,y:p.y};
+}
+const MANUAL_HIT2=26*26; // radio² de captura de cada punto
+function manualNodeAt(p){
+  let best=-1,bd=MANUAL_HIT2;
+  for(let i=0;i<9;i++){
+    const dx=positions[i].x-p.x,dy=positions[i].y-p.y,d=dx*dx+dy*dy;
+    if(d<bd){bd=d;best=i;}
+  }
+  return best;
+}
+function manualPointerDown(e){
+  if(!manualMode)return;
+  e.preventDefault();
+  manualDrawing=true;manualSeq=[];            // cada gesto empieza un patrón nuevo
+  try{board.setPointerCapture(e.pointerId);}catch(_){}
+  const p=manualSvgPoint(e);if(!p){renderManual();return;}
+  const i=manualNodeAt(p);if(i>=0)manualHit(i);
+  renderManual(p);
+}
+function manualPointerMove(e){
+  if(!manualMode||!manualDrawing)return;
+  e.preventDefault();
+  const p=manualSvgPoint(e);if(!p)return;
+  const i=manualNodeAt(p);if(i>=0)manualHit(i);
+  renderManual(p);
+}
+function manualPointerEnd(e){
+  if(!manualDrawing)return;
+  manualDrawing=false;
+  try{board.releasePointerCapture(e.pointerId);}catch(_){}
+  renderManual();                              // fija el trazo a los puntos elegidos
+}
+board.addEventListener("pointerdown",manualPointerDown);
+board.addEventListener("pointermove",manualPointerMove);
+board.addEventListener("pointerup",manualPointerEnd);
+board.addEventListener("pointercancel",manualPointerEnd);
+
 manualBtn.onclick=enterManual;
-manualClearEl.onclick=()=>{manualSeq=[];renderManual();};
+manualClearEl.onclick=()=>{manualSeq=[];manualDrawing=false;renderManual();};
 manualCancelEl.onclick=()=>{exitManual();resetReviewCursor();generate();};
 manualSaveEl.onclick=async()=>{
   if(manualSeq.length<2){toast(T.tManualTooShort);return;}
