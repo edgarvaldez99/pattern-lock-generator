@@ -129,6 +129,42 @@
   .modal p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px}
   .modal-actions{display:flex;gap:10px}
   .modal-actions button{flex:1;padding:12px}
+  .modal input[type=text]{width:100%;background:#0b101a;border:1px solid var(--line);color:var(--text);border-radius:9px;padding:11px 12px;font-size:15px;margin-bottom:18px}
+  .modal input[type=text]:focus{outline:none;border-color:var(--accent)}
+
+  /* --- filtro por tipo de tramo --- */
+  .bytype{flex-direction:column;align-items:stretch;gap:10px;background:#0b101a;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .bytype .bytype-title{font-weight:700;color:var(--text);text-align:center}
+  .bytype .bytype-line{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap}
+  .bytype input[type=range]{flex:1;max-width:200px;accent-color:var(--accent)}
+  .bytype .bytype-info b{color:var(--accent)}
+  .bytype .bytype-info{font-variant-numeric:tabular-nums}
+  .bytype button{flex:0 0 auto}
+
+  /* --- modo dibujo manual --- */
+  .manual-bar{display:none;flex-direction:column;gap:12px;width:100%;background:#0b101a;border:1px solid var(--accent);border-radius:12px;padding:14px;margin-top:4px}
+  .manual-bar.show{display:flex}
+  .manual-bar .manual-hint{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
+  .manual-bar .manual-row{display:flex;gap:10px}
+  body.manual svg.board{cursor:pointer}
+  body.manual .node{cursor:pointer}
+  body.manual .controls{display:none}
+  .node-hit{fill:transparent;pointer-events:all;touch-action:none}
+  body.manual .node-hit{cursor:pointer}
+
+  /* --- favoritos --- */
+  .fav-list{display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow:auto;margin-bottom:18px}
+  .fav-item{display:flex;align-items:center;gap:10px;background:#0b101a;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .fav-item .fav-mini{flex:0 0 auto}
+  .fav-item .fav-name{flex:1;font-weight:700;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fav-item .fav-seq{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .fav-item .fav-btns{display:flex;gap:6px;flex:0 0 auto}
+  .fav-item .fav-btns button{flex:0 0 auto;padding:6px 10px;font-size:12px;border-radius:8px}
+  .fav-empty{color:var(--muted);font-size:14px;text-align:center;padding:18px 0}
+  .fav-meter{font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px}
+  svg.fav-mini{width:34px;height:34px;display:block}
+  svg.fav-mini circle{fill:var(--node)}
+  svg.fav-mini path{stroke:var(--accent);stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
 
   @media(max-width:520px){
     body{padding:20px 12px 48px}
@@ -207,6 +243,28 @@
             <option value="9">9</option>
           </select>
         </div>
+        <div class="ctlrow bytype">
+          <span class="bytype-title" data-i18n="byTypeTitle">Generate by segment type</span>
+          <div class="bytype-line">
+            <span data-i18n="byTypeLen">Length:</span>
+            <select id="typeLen">
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6" selected>6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+            </select>
+          </div>
+          <div class="bytype-line">
+            <span data-i18n="byTypeDiagShort">Diagonals</span>
+            <input type="range" id="typeDiag" min="0" max="5" step="1" value="0">
+          </div>
+          <div class="bytype-line bytype-info" id="typeInfo">—</div>
+          <div class="bytype-line">
+            <button class="btn-ghost" id="typeGen" data-i18n="byTypeGen">Generate by type</button>
+          </div>
+        </div>
         <div class="speed">
           <span data-i18n="speed">Speed</span>
           <span style="font-size:11px">🐢</span>
@@ -217,6 +275,22 @@
         <div class="row">
           <button class="btn-ghost" id="generate" data-i18n="genNext">Generate next</button>
           <button class="btn-primary" id="save" disabled data-i18n="save">Save pattern</button>
+        </div>
+        <div class="row">
+          <button class="btn-ghost" id="manualBtn" data-i18n="manualEnter">✏️ Enter pattern manually</button>
+          <button class="btn-ghost" id="favSaveBtn" disabled data-i18n="favSaveBtn">★ Save to favorites</button>
+        </div>
+      </div>
+
+      <div class="manual-bar" id="manualBar">
+        <div class="manual-hint" id="manualHint" data-i18n="manualHint">Tap the dots in order to draw your pattern.</div>
+        <div class="manual-row">
+          <button class="btn-ghost" id="manualClear" data-i18n="manualClear">Clear</button>
+          <button class="btn-ghost" id="manualCancel" data-i18n="manualCancel">Cancel</button>
+        </div>
+        <div class="manual-row">
+          <button class="btn-ghost" id="manualFav" data-i18n="favSaveBtn">★ Save to favorites</button>
+          <button class="btn-primary" id="manualSave" data-i18n="manualSave">Save pattern</button>
         </div>
       </div>
     </div>
@@ -231,6 +305,7 @@
       </span>
     </div>
     <div class="extra-actions">
+      <button class="btn-ghost" id="favViewBtn" data-i18n="favViewBtn">★ Favorites</button>
       <button class="btn-ghost" id="reviewBtn" data-i18n="review">↺ Re-show saved patterns</button>
       <button class="btn-danger" id="resetBtn" data-i18n="reset">Reset database</button>
     </div>
@@ -246,6 +321,28 @@
     <div class="modal-actions">
       <button class="btn-ghost" id="modalCancel"></button>
       <button class="btn-danger" id="modalConfirm"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="nameModal">
+  <div class="modal">
+    <h3 id="nameModalTitle"></h3>
+    <input type="text" id="nameInput" maxlength="32" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn-ghost" id="nameCancel"></button>
+      <button class="btn-primary" id="nameConfirm"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="favModal">
+  <div class="modal">
+    <h3 id="favModalTitle"></h3>
+    <div class="fav-meter" id="favMeter"></div>
+    <div class="fav-list" id="favList"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="favClose"></button>
     </div>
   </div>
 </div>
@@ -295,7 +392,36 @@ const I18N={
     resetText:"All patterns marked as done will be erased. This cannot be undone. We recommend exporting first.",
     confirmDelete:"Yes, delete all",
     cancel:"Cancel",
-    gotIt:"Got it"
+    gotIt:"Got it",
+    byTypeTitle:"Generate by segment type",
+    byTypeLen:"Length:",
+    byTypeDiagShort:"Diagonals",
+    byTypeGen:"Generate by type",
+    byTypeInfo:(d,r)=>"Diagonals: "+d+" · Straight: "+r,
+    tByTypeNone:"No undone patterns with that combination",
+    manualEnter:"✏️ Enter pattern manually",
+    manualHint:"Tap the dots in order to draw your pattern (min 2).",
+    manualSave:"Save pattern",
+    manualCancel:"Cancel",
+    manualClear:"Clear",
+    tManualTooShort:"Draw at least 2 dots",
+    tManualSaved:"Pattern saved",
+    tManualDone:"That pattern was already done",
+    favSaveBtn:"★ Save to favorites",
+    favViewBtn:"★ Favorites",
+    favTitle:"Your favorites",
+    favEmpty:"No favorites yet",
+    favNameTitle:"Name this favorite",
+    favNamePh:"e.g. P1, L2…",
+    favShow:"Show",
+    favDelete:"Delete",
+    close:"Close",
+    nameOk:"Save",
+    tFavSaved:"Added to favorites",
+    tFavDup:"That pattern is already a favorite",
+    tFavNoName:"Type a name",
+    tFavNoMem:"Not enough storage to keep room for all 389,112 — free space to add more favorites",
+    favMeter:n=>n+" saved · suggested 10, limited only by your browser storage"
   },
   es:{
     htmlLang:"es",
@@ -338,7 +464,36 @@ const I18N={
     resetText:"Se borrarán todos los patrones marcados como hechos. Esta acción no se puede deshacer. Te recomendamos exportar primero.",
     confirmDelete:"Sí, borrar todo",
     cancel:"Cancelar",
-    gotIt:"Entendido"
+    gotIt:"Entendido",
+    byTypeTitle:"Generar por tipo de tramo",
+    byTypeLen:"Longitud:",
+    byTypeDiagShort:"Diagonales",
+    byTypeGen:"Generar por tipo",
+    byTypeInfo:(d,r)=>"Diagonales: "+d+" · Rectas: "+r,
+    tByTypeNone:"No hay patrones sin hacer con esa combinación",
+    manualEnter:"✏️ Ingresar patrón manualmente",
+    manualHint:"Toca los puntos en orden para dibujar tu patrón (mín. 2).",
+    manualSave:"Guardar patrón",
+    manualCancel:"Cancelar",
+    manualClear:"Limpiar",
+    tManualTooShort:"Dibuja al menos 2 puntos",
+    tManualSaved:"Patrón guardado",
+    tManualDone:"Ese patrón ya estaba hecho",
+    favSaveBtn:"★ Guardar en favoritos",
+    favViewBtn:"★ Favoritos",
+    favTitle:"Tus favoritos",
+    favEmpty:"Aún no tienes favoritos",
+    favNameTitle:"Ponle un nombre a este favorito",
+    favNamePh:"Ej: P1, L2…",
+    favShow:"Mostrar",
+    favDelete:"Eliminar",
+    close:"Cerrar",
+    nameOk:"Guardar",
+    tFavSaved:"Añadido a favoritos",
+    tFavDup:"Ese patrón ya está en favoritos",
+    tFavNoName:"Escribe un nombre",
+    tFavNoMem:"No hay memoria suficiente para reservar espacio a los 389.112; libera espacio para guardar más favoritos",
+    favMeter:n=>n+" guardado(s) · sugerido 10, solo limitado por la memoria de tu navegador"
   },
   pt:{
     htmlLang:"pt",
@@ -381,7 +536,36 @@ const I18N={
     resetText:"Todos os padrões marcados como feitos serão apagados. Esta ação não pode ser desfeita. Recomendamos exportar primeiro.",
     confirmDelete:"Sim, apagar tudo",
     cancel:"Cancelar",
-    gotIt:"Entendido"
+    gotIt:"Entendido",
+    byTypeTitle:"Gerar por tipo de traço",
+    byTypeLen:"Comprimento:",
+    byTypeDiagShort:"Diagonais",
+    byTypeGen:"Gerar por tipo",
+    byTypeInfo:(d,r)=>"Diagonais: "+d+" · Retas: "+r,
+    tByTypeNone:"Não há padrões não feitos com essa combinação",
+    manualEnter:"✏️ Inserir padrão manualmente",
+    manualHint:"Toque nos pontos em ordem para desenhar seu padrão (mín. 2).",
+    manualSave:"Salvar padrão",
+    manualCancel:"Cancelar",
+    manualClear:"Limpar",
+    tManualTooShort:"Desenhe ao menos 2 pontos",
+    tManualSaved:"Padrão salvo",
+    tManualDone:"Esse padrão já estava feito",
+    favSaveBtn:"★ Salvar nos favoritos",
+    favViewBtn:"★ Favoritos",
+    favTitle:"Seus favoritos",
+    favEmpty:"Ainda não há favoritos",
+    favNameTitle:"Dê um nome a este favorito",
+    favNamePh:"Ex: P1, L2…",
+    favShow:"Mostrar",
+    favDelete:"Excluir",
+    close:"Fechar",
+    nameOk:"Salvar",
+    tFavSaved:"Adicionado aos favoritos",
+    tFavDup:"Esse padrão já está nos favoritos",
+    tFavNoName:"Digite um nome",
+    tFavNoMem:"Memória insuficiente para reservar espaço aos 389.112; libere espaço para salvar mais favoritos",
+    favMeter:n=>n+" salvo(s) · sugerido 10, limitado só pela memória do navegador"
   }
 };
 
@@ -418,6 +602,7 @@ function applyLang(code){
 function refreshDynamicLabels(){
   // botón de modal abierto, etc. se regeneran al abrirse; aquí solo el rank si está en modo guardado
   if(lastReviewLabel)rankEl.textContent=lastReviewLabel();
+  if(typeof updateTypeInfo==="function")updateTypeInfo();
 }
 
 /* ============ tablero ============ */
@@ -441,6 +626,31 @@ const startLenEl=document.getElementById("startLen");
 const countEl=document.getElementById("count");
 const barEl=document.getElementById("bar");
 const toastEl=document.getElementById("toast");
+/* por tipo */
+const typeLenEl=document.getElementById("typeLen");
+const typeDiagEl=document.getElementById("typeDiag");
+const typeInfoEl=document.getElementById("typeInfo");
+const typeGenEl=document.getElementById("typeGen");
+/* manual */
+const manualBtn=document.getElementById("manualBtn");
+const manualBar=document.getElementById("manualBar");
+const manualClearEl=document.getElementById("manualClear");
+const manualCancelEl=document.getElementById("manualCancel");
+const manualSaveEl=document.getElementById("manualSave");
+const manualFavEl=document.getElementById("manualFav");
+/* favoritos */
+const favSaveBtn=document.getElementById("favSaveBtn");
+const favViewBtn=document.getElementById("favViewBtn");
+const nameModal=document.getElementById("nameModal");
+const nameModalTitle=document.getElementById("nameModalTitle");
+const nameInput=document.getElementById("nameInput");
+const nameCancel=document.getElementById("nameCancel");
+const nameConfirm=document.getElementById("nameConfirm");
+const favModal=document.getElementById("favModal");
+const favModalTitle=document.getElementById("favModalTitle");
+const favMeterEl=document.getElementById("favMeter");
+const favListEl=document.getElementById("favList");
+const favCloseEl=document.getElementById("favClose");
 const TOTAL=389112;
 const COUNT_BY_LEN={4:1624,5:7152,6:26016,7:72912,8:140704,9:140704};
 
@@ -450,7 +660,7 @@ const MIDDLE={ "0-2":1,"2-0":1,"3-5":4,"5-3":4,"6-8":7,"8-6":7,
 
 const START="#7df0b4", END="#ffd166", MID="#3ddc84";
 
-const nodeEls=positions.map((p)=>{
+const nodeEls=positions.map((p,i)=>{
   const g=document.createElementNS(NS,"g");g.setAttribute("class","node");
   const ring=document.createElementNS(NS,"circle");
   ring.setAttribute("class","node-ring");ring.setAttribute("cx",p.x);ring.setAttribute("cy",p.y);ring.setAttribute("r",R);
@@ -458,7 +668,10 @@ const nodeEls=positions.map((p)=>{
   dot.setAttribute("class","node-dot");dot.setAttribute("cx",p.x);dot.setAttribute("cy",p.y);dot.setAttribute("r",6);
   const num=document.createElementNS(NS,"text");
   num.setAttribute("class","node-num");num.setAttribute("x",p.x);num.setAttribute("y",p.y);
-  g.append(ring,dot,num);nodesG.append(g);
+  const hit=document.createElementNS(NS,"circle");
+  hit.setAttribute("class","node-hit");hit.setAttribute("cx",p.x);hit.setAttribute("cy",p.y);hit.setAttribute("r",28);
+  hit.addEventListener("pointerdown",()=>{if(manualMode)manualHit(i);});
+  g.append(ring,dot,num,hit);nodesG.append(g);
   return {g,num};
 });
 
@@ -468,25 +681,52 @@ function pathUpTo(seq,n){
   return s.length?s.map((i,k)=>(k?"L":"M")+positions[i].x+" "+positions[i].y).join(" "):"";
 }
 
+/* generadores DFS reutilizables (válidos según reglas de Android) */
+function* genPatternsOfLen(L){
+  for(let s=0;s<9;s++){const used=new Array(9).fill(false);used[s]=true;yield* genRec([s],used,L);}
+}
+function* genRec(seq,used,L){
+  if(seq.length===L){yield seq.slice();return;}
+  const last=seq[seq.length-1];
+  for(let n=0;n<9;n++){
+    if(used[n])continue;
+    const mid=MIDDLE[last+"-"+n];
+    if(mid!=null&&!used[mid])continue;
+    used[n]=true;seq.push(n);yield* genRec(seq,used,L);seq.pop();used[n]=false;
+  }
+}
+
 /* iterador perezoso simple→complejo */
 function makeIterator(startLen){
   let len=startLen, gen=null;
-  function* dfsForLen(L){
-    for(let s=0;s<9;s++){const used=new Array(9).fill(false);used[s]=true;yield* rec([s],used,L);}
-  }
-  function* rec(seq,used,L){
-    if(seq.length===L){yield seq.slice();return;}
-    const last=seq[seq.length-1];
-    for(let n=0;n<9;n++){
-      if(used[n])continue;
-      const mid=MIDDLE[last+"-"+n];
-      if(mid!=null&&!used[mid])continue;
-      used[n]=true;seq.push(n);yield* rec(seq,used,L);seq.pop();used[n]=false;
-    }
-  }
   return {next(){
-    while(len<=9){if(!gen)gen=dfsForLen(len);const r=gen.next();if(!r.done)return{seq:r.value,len};gen=null;len++;}
+    while(len<=9){if(!gen)gen=genPatternsOfLen(len);const r=gen.next();if(!r.done)return{seq:r.value,len};gen=null;len++;}
     return null;
+  }};
+}
+
+/* clasificación de tramos: recta = horizontal o vertical;
+   diagonal = cualquier tramo inclinado (45° exacto o salto "en L") */
+function isDiag(a,b){
+  const dr=((a/3)|0)-((b/3)|0);
+  const dc=(a%3)-(b%3);
+  return dr!==0 && dc!==0;
+}
+function countDiagonals(seq){
+  let n=0;
+  for(let i=1;i<seq.length;i++)if(isDiag(seq[i-1],seq[i]))n++;
+  return n;
+}
+/* iterador filtrado por longitud L y nº exacto de diagonales D */
+function makeTypeIterator(L,D){
+  let gen=null;
+  return {next(){
+    if(!gen)gen=genPatternsOfLen(L);
+    while(true){
+      const r=gen.next();
+      if(r.done)return null;
+      if(countDiagonals(r.value)===D)return {seq:r.value,len:L};
+    }
   }};
 }
 
@@ -498,6 +738,8 @@ let iterator=null;
 let pending=null;
 let animTimer=null;
 let lastReviewLabel=null; // función que devuelve la etiqueta "saved a/b" en el idioma actual
+let manualMode=false, manualSeq=[];
+let genMode="seq", typePos=0;
 
 function clearBoard(){
   nodeEls.forEach(o=>{o.g.classList.remove("on","is-start","is-end");o.num.textContent="";});
@@ -541,10 +783,11 @@ let db;
 const doneKeys=new Set();
 function openDB(){
   return new Promise((res,rej)=>{
-    const req=indexedDB.open("patterns-db",1);
+    const req=indexedDB.open("patterns-db",2);
     req.onupgradeneeded=e=>{
       const d=e.target.result;
       if(!d.objectStoreNames.contains("patterns"))d.createObjectStore("patterns",{keyPath:"key"});
+      if(!d.objectStoreNames.contains("favorites"))d.createObjectStore("favorites",{keyPath:"id",autoIncrement:true});
     };
     req.onsuccess=e=>{db=e.target.result;res();};
     req.onerror=e=>rej(e.target.error);
@@ -563,6 +806,7 @@ function updateStats(){
 }
 
 function startIterator(){
+  genMode="seq";
   let from=4;
   const sel=startLenEl.value;
   if(sel!=="auto")from=parseInt(sel,10);
@@ -570,29 +814,62 @@ function startIterator(){
   posInLen={};
 }
 let posInLen={};
+function showPending(seq,len){
+  pending=seq;current=seq;currentLen=len;
+  lenEl.textContent=len;
+  animate(seq);
+  saveBtn.disabled=doneKeys.has(keyOf(seq));
+  favSaveBtn.disabled=false;
+}
 function generate(){
   lastReviewLabel=null;
   if(!iterator)startIterator();
   let safety=0;
   while(safety++<2000000){
     const r=iterator.next();
-    if(!r){pending=null;saveBtn.disabled=true;toast(T.tNoneLeft);return;}
+    if(!r){
+      pending=null;saveBtn.disabled=true;favSaveBtn.disabled=true;
+      toast(genMode==="type"?T.tByTypeNone:T.tNoneLeft);return;
+    }
     const key=keyOf(r.seq);
-    posInLen[r.len]=(posInLen[r.len]||0)+1;
-    if(doneKeys.has(key))continue;
-    pending=r.seq;currentLen=r.len;
-    currentRank=LEN_OFFSET[r.len]+posInLen[r.len];
-    rankEl.textContent=fmt(currentRank);
-    lenEl.textContent=r.len;
-    animate(r.seq);saveBtn.disabled=false;
+    if(doneKeys.has(key)){if(genMode!=="type")posInLen[r.len]=(posInLen[r.len]||0)+1;continue;}
+    if(genMode==="type"){
+      typePos++;currentRank=typePos;
+      rankEl.textContent=fmt(typePos);
+    }else{
+      posInLen[r.len]=(posInLen[r.len]||0)+1;
+      currentRank=LEN_OFFSET[r.len]+posInLen[r.len];
+      rankEl.textContent=fmt(currentRank);
+    }
+    showPending(r.seq,r.len);
     return;
   }
 }
 
-genBtn.onclick=()=>{resetReviewCursor();generate();};
-replayBtn.onclick=()=>{if(pending||current.length)animate(pending||current);};
+genBtn.onclick=()=>{exitManual();resetReviewCursor();generate();};
+replayBtn.onclick=()=>{if(!manualMode&&(pending||current.length))animate(pending||current);};
 speedEl.oninput=()=>{};
-startLenEl.onchange=()=>{resetReviewCursor();startIterator();generate();};
+startLenEl.onchange=()=>{exitManual();resetReviewCursor();startIterator();generate();};
+
+/* ---- generar por tipo de tramo ---- */
+function updateTypeInfo(){
+  const L=parseInt(typeLenEl.value,10);
+  const max=L-1;
+  typeDiagEl.max=max;
+  if(parseInt(typeDiagEl.value,10)>max)typeDiagEl.value=max;
+  const D=parseInt(typeDiagEl.value,10);
+  typeInfoEl.innerHTML=T.byTypeInfo("<b>"+D+"</b>","<b>"+(max-D)+"</b>");
+}
+typeLenEl.onchange=updateTypeInfo;
+typeDiagEl.oninput=updateTypeInfo;
+typeGenEl.onclick=()=>{
+  exitManual();resetReviewCursor();
+  const L=parseInt(typeLenEl.value,10);
+  const D=parseInt(typeDiagEl.value,10);
+  genMode="type";typePos=0;
+  iterator=makeTypeIterator(L,D);
+  generate();
+};
 
 saveBtn.onclick=async()=>{
   if(!pending)return;
@@ -662,8 +939,164 @@ async function reviewPrev(){
   current=it.seq;
   animate(it.seq);
 }
-reviewBtn.onclick=reviewPrev;
+reviewBtn.onclick=()=>{exitManual();reviewPrev();};
 function resetReviewCursor(){reviewList=null;reviewPos=-1;lastReviewLabel=null;}
+
+/* ============ ingreso manual (dibujar tocando los puntos) ============ */
+function enterManual(){
+  exitManual();
+  manualMode=true;manualSeq=[];
+  document.body.classList.add("manual");
+  manualBar.classList.add("show");
+  pending=null;current=[];favSaveBtn.disabled=true;saveBtn.disabled=true;
+  clearBoard();renderOrder([]);
+  rankEl.textContent="✏️";lenEl.textContent="—";
+}
+function exitManual(){
+  if(!manualMode)return;
+  manualMode=false;manualSeq=[];
+  document.body.classList.remove("manual");
+  manualBar.classList.remove("show");
+}
+function manualHit(i){
+  if(manualSeq.includes(i))return;
+  const last=manualSeq[manualSeq.length-1];
+  if(last!=null){
+    const mid=MIDDLE[last+"-"+i];
+    if(mid!=null&&!manualSeq.includes(mid))manualSeq.push(mid);
+  }
+  manualSeq.push(i);
+  renderManual();
+}
+function renderManual(){
+  clearBoard();renderOrder(manualSeq);
+  manualSeq.forEach((idx,k)=>{
+    const o=nodeEls[idx];o.g.classList.add("on");o.num.textContent=k+1;
+  });
+  if(manualSeq.length){
+    nodeEls[manualSeq[0]].g.classList.add("is-start");
+    nodeEls[manualSeq[manualSeq.length-1]].g.classList.add("is-end");
+    trail.setAttribute("d",pathUpTo(manualSeq,manualSeq.length));
+  }
+  lenEl.textContent=manualSeq.length||"—";
+}
+manualBtn.onclick=enterManual;
+manualClearEl.onclick=()=>{manualSeq=[];renderManual();};
+manualCancelEl.onclick=()=>{exitManual();resetReviewCursor();generate();};
+manualSaveEl.onclick=async()=>{
+  if(manualSeq.length<2){toast(T.tManualTooShort);return;}
+  const seq=[...manualSeq],key=keyOf(seq);
+  if(doneKeys.has(key)){toast(T.tManualDone);exitManual();showPending(seq,seq.length);return;}
+  try{
+    await dbAdd({key,seq,len:seq.length,ts:Date.now()});
+    doneKeys.add(key);updateStats();resetReviewCursor();
+    toast(T.tManualSaved);
+    exitManual();showPending(seq,seq.length);
+  }catch(_){toast(T.tSaveFail);}
+};
+manualFavEl.onclick=()=>{
+  if(manualSeq.length<2){toast(T.tManualTooShort);return;}
+  openNameModal([...manualSeq]);
+};
+
+/* ============ favoritos ============ */
+function favStore(mode){return db.transaction("favorites",mode).objectStore("favorites");}
+function favAdd(rec){return new Promise((res,rej)=>{const r=favStore("readwrite").add(rec);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function favAll(){return new Promise((res,rej)=>{const r=favStore("readonly").getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+function favDel(id){return new Promise((res,rej)=>{const r=favStore("readwrite").delete(id);r.onsuccess=res;r.onerror=()=>rej(r.error);});}
+
+/* deja espacio reservado para poder completar los 389.112 patrones "hechos" */
+const BYTES_PER_PATTERN=140; // estimación con overhead de IndexedDB
+async function hasRoomForFavorite(){
+  try{
+    if(!navigator.storage||!navigator.storage.estimate)return true;
+    const est=await navigator.storage.estimate();
+    if(!est||!est.quota)return true;
+    const remainingDone=Math.max(0,TOTAL-doneKeys.size);
+    const reserve=remainingDone*BYTES_PER_PATTERN;      // espacio para los "hechos" que faltan
+    const free=est.quota*0.95-(est.usage||0);            // con margen de seguridad
+    return free-reserve>BYTES_PER_PATTERN*4;             // y que quepa el nuevo favorito
+  }catch(_){return true;}
+}
+
+let nameTargetSeq=null;
+function openNameModal(seq){
+  nameTargetSeq=seq;
+  nameModalTitle.textContent=T.favNameTitle;
+  nameInput.value="";nameInput.placeholder=T.favNamePh;
+  nameCancel.textContent=T.cancel;nameConfirm.textContent=T.nameOk;
+  nameModal.classList.add("show");
+  setTimeout(()=>nameInput.focus(),60);
+}
+nameCancel.onclick=()=>nameModal.classList.remove("show");
+nameModal.onclick=e=>{if(e.target===nameModal)nameModal.classList.remove("show");};
+nameInput.addEventListener("keydown",e=>{if(e.key==="Enter")nameConfirm.click();});
+nameConfirm.onclick=async()=>{
+  const name=nameInput.value.trim();
+  if(!name){toast(T.tFavNoName);return;}
+  if(!nameTargetSeq||nameTargetSeq.length<2)return;
+  const seq=[...nameTargetSeq],key=keyOf(seq);
+  try{
+    const all=await favAll();
+    if(all.some(f=>f.key===key)){toast(T.tFavDup);return;}
+    if(!await hasRoomForFavorite()){toast(T.tFavNoMem);return;}
+    await favAdd({key,name,seq,len:seq.length,ts:Date.now()});
+    nameModal.classList.remove("show");
+    toast(T.tFavSaved);
+  }catch(_){toast(T.tFavNoMem);}
+};
+favSaveBtn.onclick=()=>{if(pending&&pending.length>=2)openNameModal([...pending]);};
+
+function favMiniSvg(seq){
+  const svg=document.createElementNS(NS,"svg");
+  svg.setAttribute("class","fav-mini");svg.setAttribute("viewBox","0 0 100 100");
+  for(let i=0;i<9;i++){
+    const c=document.createElementNS(NS,"circle");
+    c.setAttribute("cx",15+(i%3)*35);c.setAttribute("cy",15+((i/3)|0)*35);c.setAttribute("r",6);
+    svg.appendChild(c);
+  }
+  const path=document.createElementNS(NS,"path");
+  path.setAttribute("d",seq.map((idx,k)=>(k?"L":"M")+(15+(idx%3)*35)+" "+(15+((idx/3)|0)*35)).join(" "));
+  svg.appendChild(path);
+  return svg;
+}
+function favItemEl(f){
+  const wrap=document.createElement("div");wrap.className="fav-item";
+  wrap.appendChild(favMiniSvg(f.seq));
+  const info=document.createElement("div");info.style.flex="1";info.style.overflow="hidden";
+  const nm=document.createElement("div");nm.className="fav-name";nm.textContent=f.name;
+  const sq=document.createElement("div");sq.className="fav-seq";sq.textContent=f.seq.map(n=>n+1).join("-");
+  info.append(nm,sq);wrap.appendChild(info);
+  const btns=document.createElement("div");btns.className="fav-btns";
+  const show=document.createElement("button");show.className="btn-ghost";show.textContent=T.favShow;
+  show.onclick=()=>{
+    favModal.classList.remove("show");exitManual();resetReviewCursor();
+    lenEl.textContent=f.seq.length;rankEl.textContent=f.name;
+    pending=f.seq;current=f.seq;
+    animate(f.seq);
+    saveBtn.disabled=doneKeys.has(keyOf(f.seq));favSaveBtn.disabled=false;
+  };
+  const del=document.createElement("button");del.className="btn-danger";del.textContent=T.favDelete;
+  del.onclick=async()=>{try{await favDel(f.id);}catch(_){}openFavModal();};
+  btns.append(show,del);wrap.appendChild(btns);
+  return wrap;
+}
+async function openFavModal(){
+  let all=[];try{all=await favAll();}catch(_){}
+  all.sort((a,b)=>b.ts-a.ts);
+  favModalTitle.textContent=T.favTitle;
+  favCloseEl.textContent=T.close;
+  favMeterEl.textContent=all.length?T.favMeter(all.length):"";
+  favListEl.innerHTML="";
+  if(!all.length){
+    const e=document.createElement("div");e.className="fav-empty";e.textContent=T.favEmpty;
+    favListEl.appendChild(e);
+  }else all.forEach(f=>favListEl.appendChild(favItemEl(f)));
+  favModal.classList.add("show");
+}
+favViewBtn.onclick=openFavModal;
+favCloseEl.onclick=()=>favModal.classList.remove("show");
+favModal.onclick=e=>{if(e.target===favModal)favModal.classList.remove("show");};
 
 /* modal */
 const modal=document.getElementById("modal");
@@ -687,6 +1120,7 @@ function showModal(title,text,danger){
 }
 const resetBtn=document.getElementById("resetBtn");
 resetBtn.onclick=()=>{
+  exitManual();
   if(doneKeys.size===0){toast(T.tDbEmpty);return;}
   modalAction="reset";
   showModal(T.resetTitle,T.resetText,true);
